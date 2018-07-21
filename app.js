@@ -13,10 +13,11 @@ const options = {
         username: oAuth.username,
         password: oAuth.oauth
     },
-    channels: ["azumayaaru"]
+    channels: ["azumayaaru", "fluidnexus"]
 }
 
-var storage ={}
+var storage = {}
+var autoMessage = {}
 
 var mail = ["sale", "male", "fail", "pale", "snail", "ale", "bail", "kale", "grail", "quail", "nail", "hail", "scale", "stale", "rail", "tail", "tale", "veil", "whale", "yale", "trail", "jail"]
 
@@ -26,11 +27,14 @@ client.connect();
 client.on("chat", function (channel, user, message, self) {
     if (user.username == channel.substring(1, channel.length)){
         adminCommands(channel, message);
+        userCommands(channel, message, user.username);
+    } else if (user.mod){
+        adminCommands(channel, message);
+        userCommands(channel, message, user.username);
     } else {
         userCommands(channel, message, user.username);
     }
 });
-
 
 function say(channel, message) {
     client.action(channel, message);
@@ -48,9 +52,22 @@ function adminCommands(channel, message){
         case "!pickwinner":
             pickWinner(channel);
             break;
+        case "!message":
+            setMessages(channel, message.substring(9, message.length));
+            break;
+        case "!clearmessage":
+            clearMessage(channel)
         default:
             break;
     }
+}
+
+function setMessages(channel, message){
+    autoMessage[channel] = setInterval(function(){ say(channel, message); }, 1000);
+}
+
+function clearMessage(channel){
+    clearInterval(autoMessage[channel]);
 }
 
 function pickWinner(channel) {
@@ -74,12 +91,17 @@ function addGiveaway(channel, command){
             "active": true
         }
         storage[channel] = temp;
+        say(channel, "Giveaway is now active, Type !" + command + " to enter.")
     }
-    console.log(JSON.stringify(storage));
 }
 
 function clearGiveaway(channel) {
-    delete storage[channel]
+    if (storage[channel]){
+        delete storage[channel]
+        say(channel, "Giveaway has closed");
+    } else {
+        say(channel, "No giveaway is currently active");
+    }
 }
 
 function userCommands(channel, message, username){
