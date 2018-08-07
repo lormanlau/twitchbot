@@ -13,11 +13,12 @@ const options = {
         username: oAuth.username,
         password: oAuth.oauth
     },
-    channels: ["azumayaaru", "fluidnexus"]
+    channels: ["azumayaaru"]
 }
 
 var storage = {}
 var autoMessage = {}
+var autoMessageText = {}
 
 var mail = ["sale", "male", "fail", "pale", "snail", "ale", "bail", "kale", "grail", "quail", "nail", "hail", "scale", "stale", "rail", "tail", "tale", "veil", "whale", "yale", "trail", "jail"]
 
@@ -56,18 +57,93 @@ function adminCommands(channel, message){
             setMessages(channel, message.substring(9, message.length));
             break;
         case "!clearmessage":
-            clearMessage(channel)
+            clearMessage(channel, message);
+            break;
         default:
             break;
     }
 }
 
-function setMessages(channel, message){
-    autoMessage[channel] = setInterval(function(){ say(channel, message); }, 1000);
+function userCommands(channel, message, username){
+    if (message.charAt(0) == "!") {
+        let temp = message.split(" ");
+        let command = temp[0].substring(1, temp[0].length);
+        if (storage[channel] != null){
+            let temp2 = storage[channel];
+            let giveawaycommand = temp2["command"];
+            switch(command) {
+                case giveawaycommand:
+                    registerToGiveaway(channel, username);
+                    break;
+                
+            }
+        } else {
+            switch(command) {
+                case "mail":
+                    newMail(channel);
+                    break;
+                case "nomercy":
+                case "nm":
+                    noMercy(channel);
+                    break;
+                case "adread":
+                    say(channel, "cone no bang go me wha go ran no sponsor no tech yo de oh core re shi mass");
+                    break;
+                case "roll":
+                    dndRoll(channel, message, username);
+                    break;
+                case "deathcount":
+                case "dc":
+                    say(channel, "Deathcount: 0")
+                    break;
+                case "energy":
+                    say(channel, "༼ つ ◕_◕ ༽つ " + channel.substring(1, channel.length).toUpperCase() + " TAKE MY ENERGY ༼ つ ◕_◕ ༽つ")
+                    break;
+                case "ohno":
+                    say(channel, "OH NO, OH NO, OH NO, OH NO");
+                    break;
+                case "maplesatori":
+                    say(channel, "!sr https://www.youtube.com/watch?v=jfZOvQnsBq0&t=1s");
+                    break;
+            }
+        }
+    }
 }
 
-function clearMessage(channel){
-    clearInterval(autoMessage[channel]);
+function setMessages(channel, message){
+    say(channel, message);
+    if(autoMessage[channel] != null) {
+        autoMessageText[channel].push(message);
+        autoMessage[channel].push(setInterval(function(){ say(channel, message); }, 5000 * 60));
+    } else {
+        autoMessage[channel] = [];
+        autoMessageText[channel] = [];
+        autoMessageText[channel].push(message);
+        autoMessage[channel].push(setInterval(function(){ say(channel, message); }, 5000 * 60));
+    }
+}
+
+function clearMessage(channel, message){
+    var temp = message.split(" ");
+    if (temp[1]) {
+        say(channel, autoMessageText[channel][temp[1]] + " has been cleared")
+        clearInterval(autoMessage[channel][temp[1]]);
+        delete(autoMessage[channel][temp[1]]);
+        delete(autoMessageText[channel][temp[1]]);
+    } else {
+        let reply = "";
+        for (var interval in autoMessage[channel]) {
+            reply += interval + ". " + autoMessageText[channel][interval]; 
+        }
+        if (reply != "") {
+            say(channel, "!clearmessage <nummber>");
+            say(channel, reply);
+        } else {
+            say(channel, "No messages for this channel");
+        }
+        
+    }
+    
 }
 
 function pickWinner(channel) {
@@ -104,42 +180,7 @@ function clearGiveaway(channel) {
     }
 }
 
-function userCommands(channel, message, username){
-    if (message.charAt(0) == "!") {
-        let temp = message.split(" ");
-        let command = temp[0].substring(1, temp[0].length);
-        if (storage[channel] != null){
-            let temp2 = storage[channel];
-            let giveawaycommand = temp2["command"];
-            switch(command) {
-                case giveawaycommand:
-                    registerToGiveaway(channel, username);
-                    break;
-                
-            }
-        }
-        switch(command) {
-            case "mail":
-                newMail(channel);
-                break;
-            case "nomercy":
-                noMercy(channel);
-                break;
-            case "adread":
-                say(channel, "cone no bang go me wha go ran no sponsor no tech yo de oh core re shi mass");
-                break;
-            case "roll":
-                dndRoll(channel, message, username);
-                break;
-            case "deathcount":
-                say(channel, "Deathcount: 11")
-                break;
-            case "takemyenergy":
-                say(channel, "༼ つ ◕_◕ ༽つ " + channel.substring(1, channel.length).toUpperCase() + " TAKE MY ENERGY ༼ つ ◕_◕ ༽つ")
-                break;
-        }
-    }
-}
+
 
 
 function noMercy(channel){
