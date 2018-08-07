@@ -94,7 +94,7 @@ function userCommands(channel, message, username){
                     break;
                 case "deathcount":
                 case "dc":
-                    say(channel, "Deathcount: 0")
+                    say(channel, "Death Count: 1")
                     break;
                 case "energy":
                     say(channel, "༼ つ ◕_◕ ༽つ " + channel.substring(1, channel.length).toUpperCase() + " TAKE MY ENERGY ༼ つ ◕_◕ ༽つ")
@@ -103,7 +103,12 @@ function userCommands(channel, message, username){
                     say(channel, "OH NO, OH NO, OH NO, OH NO");
                     break;
                 case "maplesatori":
-                    say(channel, "!sr https://www.youtube.com/watch?v=jfZOvQnsBq0&t=1s");
+                    checkMonday(channel);
+                    break;
+                case "awoo":
+                    say(channel, "https://clips.twitch.tv/PhilanthropicImportantMilkAMPEnergy")
+                    break;
+                default:
                     break;
             }
         }
@@ -140,10 +145,17 @@ function clearMessage(channel, message){
             say(channel, reply);
         } else {
             say(channel, "No messages for this channel");
-        }
-        
+        }   
     }
-    
+}
+
+function checkMonday(channel) {
+    var d = new Date();
+    if (d.getDay() != 1) {
+        say(channel, "It's not monday");
+    } else {
+        say(channel, "!sr https://www.youtube.com/watch?v=jfZOvQnsBq0&t=1s");
+    }
 }
 
 function pickWinner(channel) {
