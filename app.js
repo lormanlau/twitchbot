@@ -21,6 +21,11 @@ var autoMessage = {}
 var autoMessageText = {}
 
 var mail = ["sale", "male", "fail", "pale", "snail", "ale", "bail", "kale", "grail", "quail", "nail", "hail", "scale", "stale", "rail", "tail", "tale", "veil", "whale", "yale", "trail", "jail"]
+var s = ["MorphinTime", "MorphinTime", "MorphinTime", "TheIlluminati", "", "CoolStoryBob", "TwitchUnity"]
+var r = ["MorphinTime", "CoolStoryBob", "CoolStoryBob", "CoolStoryBob", "TwitchUnity", "TheIlluminati"]
+var h = ["MorphinTime", "TwitchUnity", "TwitchUnity", "TwitchUnity", "CoolStoryBob", "TheIlluminati"]
+var g = ["TheIlluminati", "TheIlluminati", "TheIlluminati", "TwitchUnity", "CoolStoryBob", "MorphinTime"]
+
 
 var client = new tmi.client(options);
 client.connect();
@@ -94,7 +99,7 @@ function userCommands(channel, message, username){
                     break;
                 case "deathcount":
                 case "dc":
-                    say(channel, "Death Count: 1")
+                    say(channel, "Death Count: 0")
                     break;
                 case "energy":
                     say(channel, "༼ つ ◕_◕ ༽つ " + channel.substring(1, channel.length).toUpperCase() + " TAKE MY ENERGY ༼ つ ◕_◕ ༽つ")
@@ -106,7 +111,10 @@ function userCommands(channel, message, username){
                     checkMonday(channel);
                     break;
                 case "awoo":
-                    say(channel, "https://clips.twitch.tv/PhilanthropicImportantMilkAMPEnergy")
+                    say(channel, "https://clips.twitch.tv/PhilanthropicImportantMilkAMPEnergy");
+                    break;
+                case "riphp":
+                    say(channel, "https://clips.twitch.tv/ArtisticViscousClamOptimizePrime");
                     break;
                 default:
                     break;
@@ -212,23 +220,47 @@ function dndRoll(channel, message, username) {
     if (temp.length == 1) {
         s += rollDice(20);
     } else {
-        var command = temp[1].split("d");
-        if (command.length == 2 && !command.some(isNaN)) {
-            if(command[0] != "") {
-                if (command[0] == 0 || command[1] == 0){
+        switch(temp[1]){
+            case "g":
+                var side = rollHarryDice(g);
+                say(channel, username + " rolled: " + side);
+                break;
+            case "h":
+                var side = rollHarryDice(h);
+                say(channel, username + " rolled: " + side);
+                break;
+            case "r":
+                var side = rollHarryDice(r);
+                say(channel, username + " rolled: " + side);
+                break;
+            case "s":
+                var side = rollHarryDice(s);
+                say(channel, username + " rolled: " + side);
+                break;
+            default:
+                var command = temp[1].split("d");
+                if (command.length == 2 && !command.some(isNaN)) {
+                    if(command[0] != "") {
+                        if (command[0] == 0 || command[1] == 0){
+                            return;
+                        }
+                        for (var i = 0; i < command[0]; i++){ 
+                            s += rollDice(command[1]) + " ";
+                        }
+                    } else {
+                        s += rollDice(command[1]);
+                    }
+                } else {
                     return;
                 }
-                for (var i = 0; i < command[0]; i++){ 
-                    s += rollDice(command[1]) + " ";
-                }
-            } else {
-                s += rollDice(command[1]);
-            }
-        } else {
-            return;
-        }
+                say(channel, s);
+        }   
     }
-    say(channel, s);
+}
+
+function rollHarryDice(dice){
+    var i = Math.floor((Math.random() * 6))
+    return dice[i];
 }
 
 function rollDice(sides){
