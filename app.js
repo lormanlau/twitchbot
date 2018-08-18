@@ -64,6 +64,8 @@ function adminCommands(channel, message){
         case "!clearmessage":
             clearMessage(channel, message);
             break;
+        case "!updatedc:"
+            updateDeathCount(channel, message);
         default:
             break;
     }
@@ -80,7 +82,6 @@ function userCommands(channel, message, username){
                 case giveawaycommand:
                     registerToGiveaway(channel, username);
                     break;
-                
             }
         } else {
             switch(command) {
@@ -99,7 +100,7 @@ function userCommands(channel, message, username){
                     break;
                 case "deathcount":
                 case "dc":
-                    say(channel, "Death Count: 0")
+                    say(channel, "Death Count: " + storage[channel]["dead_count"]);
                     break;
                 case "energy":
                     say(channel, "༼ つ ◕_◕ ༽つ " + channel.substring(1, channel.length).toUpperCase() + " TAKE MY ENERGY ༼ つ ◕_◕ ༽つ")
@@ -116,6 +117,8 @@ function userCommands(channel, message, username){
                 case "riphp":
                     say(channel, "https://clips.twitch.tv/ArtisticViscousClamOptimizePrime");
                     break;
+                case "awoooo":
+                    say(channel, "!sr https://www.youtube.com/watch?v=eGslweDOihs")
                 default:
                     break;
             }
@@ -136,13 +139,33 @@ function setMessages(channel, message){
     }
 }
 
+function updateDeathCount(channel, message){
+    let count = message.split(" ")[1];
+    if (!isNaN(count)){
+        storage[channel]["dead_count"] = count;
+        say(channel, "Death Count: " + storage[channel]["dead_count"]);
+    }
+}
+
 function clearMessage(channel, message){
+    if (autoMessage[channel].length == 0){
+        say(channel, "No message currently active");
+        return
+    }
     var temp = message.split(" ");
-    if (temp[1]) {
+    if (!isNaN(temp[1])) {
         say(channel, autoMessageText[channel][temp[1]] + " has been cleared")
         clearInterval(autoMessage[channel][temp[1]]);
-        delete(autoMessage[channel][temp[1]]);
-        delete(autoMessageText[channel][temp[1]]);
+        autoMessage[channel].splice(parseInt(temp[1]), 1)
+        autoMessageText[channel].splice(parseInt(temp[1]), 1)
+    } else if (temp[1] == "all"){
+        say(channel, "All messages have been cleared");
+        
+        for (var i = 0; i < autoMessage[channel].length; i++){
+            clearInterval(autoMessage[channel][i])
+            autoMessage[channel].splice(i,1);
+            autoMessageText[channel].splice(i,1);
+        }
     } else {
         let reply = "";
         for (var interval in autoMessage[channel]) {
@@ -151,9 +174,7 @@ function clearMessage(channel, message){
         if (reply != "") {
             say(channel, "!clearmessage <nummber>");
             say(channel, reply);
-        } else {
-            say(channel, "No messages for this channel");
-        }   
+        }  
     }
 }
 
@@ -215,12 +236,25 @@ function newMail(channel){
 }
 
 function dndRoll(channel, message, username) {
-    var temp = message.split(" ");
+    var temp = message.substring(6, message.length);
     var s = username + " has rolled: ";
-    if (temp.length == 1) {
-        s += rollDice(20);
+    var rolls = "("
+    var total = 0;
+    var dices = 1;
+    var sides = 1;
+    var extra = 0;
+    if (temp == "") {
+        total = rollDice(20)
+        rolls += total + ")";
+        s += total + " " + rolls
+        say(channel, s);
+    } else if (!isNaN(temp)) {
+        total = rollDice(parseInt(temp))
+        rolls += total + ")"
+        s += total + " " + rolls
+        say(channel, s);
     } else {
-        switch(temp[1]){
+        switch(temp){
             case "g":
                 var side = rollHarryDice(g);
                 say(channel, username + " rolled: " + side);
@@ -238,20 +272,63 @@ function dndRoll(channel, message, username) {
                 say(channel, username + " rolled: " + side);
                 break;
             default:
-                var command = temp[1].split("d");
-                if (command.length == 2 && !command.some(isNaN)) {
-                    if(command[0] != "") {
-                        if (command[0] == 0 || command[1] == 0){
-                            return;
+                var command = temp.split("d");
+                if (command.length == 2) {
+                    if (command[1].includes("+")){
+                        var add = command[1].split("+")
+                        if (add.length == 2 && !add.some(isNaN) && !isNaN(command[0])){
+                            extra = add[1]
+                            sides = add[0]
+                            if (command[0] != ""){
+                                dices = command[0]
+                            }
+                        } else {
+                            return
                         }
-                        for (var i = 0; i < command[0]; i++){ 
-                            s += rollDice(command[1]) + " ";
+                    } else if (command[1].includes("-")){
+                        var sub = command[1].split("-")
+                        if (sub.length == 2 && !sub.some(isNaN) && !isNaN(command[0])){
+                            extra = -sub[1]
+                            sides = sub[0]
+                            if (command[0] != ""){
+                                dices = command[0]
+                            }
+                        } else {
+                            return
                         }
                     } else {
-                        s += rollDice(command[1]);
+                        if (command.length == 2 && !command.some(isNaN)){
+                            sides = command[1]
+                            if(command[0] != "") {
+                                dices = command[0]
+                            }
+                        } else {
+                            return
+                        }
                     }
-                } else {
-                    return;
+
+                    if (dices == 0 || sides == 0){
+                        return;
+                    }
+
+                    for (var i = 0; i < dices - 1; i++){ 
+                        var roll = rollDice(sides)
+                        total += roll
+                        rolls += roll + " "
+                    }
+                    var roll = rollDice(sides)
+                    total += roll + parseInt(extra)
+                    if (extra != 0) {
+                        rolls += roll + ") " + extra
+                    } else {
+                        rolls += roll + ")"
+                    }
+                    if (total > 0) {
+                        s += total + " " + rolls
+                    } else {
+                        s += "0 " + rolls
+                    }
+                    
                 }
                 say(channel, s);
         }   
