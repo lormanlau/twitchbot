@@ -64,7 +64,7 @@ function adminCommands(channel, message){
         case "!clearmessage":
             clearMessage(channel, message);
             break;
-        case "!updatedc:"
+        case "!updatedc":
             updateDeathCount(channel, message);
         default:
             break;
