@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "discord.io": "github:izy521/discord.io",
     "tmi.js": "^1.2.1"
   }
 }
