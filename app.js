@@ -54,6 +54,7 @@ client.on("join", function(channel, username, self){
 });
 
 client.on("whisper", function(from, userstate, message, self){
+
 })
 
 function say(channel, message) {
@@ -88,7 +89,6 @@ function adminCommands(channel, message){
 }
 
 function userCommands(channel, message, username){
-    console.log(message + username)
     if (message.charAt(0) == "!") {
         let temp = message.split(" ");
         let command = temp[0].substring(1, temp[0].length);
@@ -156,7 +156,6 @@ function setMessages(channel, message){
 
 function updateDeathCount(channel, message){
     let count = message.split(" ")[1];
-    console.log(count)
     if (!isNaN(count)){
         storage[channel] = {
             death_count: count
