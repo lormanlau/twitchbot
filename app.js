@@ -42,6 +42,20 @@ client.on("chat", function (channel, user, message, self) {
     }
 });
 
+client.on("join", function(channel, username, self){
+    if (self) {
+        storage[channel] = {
+            "command": null,
+            "entries": [],
+            "active": true,
+            "death_count": 0
+        }
+    };
+});
+
+client.on("whisper", function(from, userstate, message, self){
+})
+
 function say(channel, message) {
     client.action(channel, message);
 };
@@ -66,62 +80,63 @@ function adminCommands(channel, message){
             break;
         case "!updatedc":
             updateDeathCount(channel, message);
+        case "!delete":
+            say(channel, "/timeout " + array[1] + " 1");
         default:
             break;
     }
 }
 
 function userCommands(channel, message, username){
+    console.log(message + username)
     if (message.charAt(0) == "!") {
         let temp = message.split(" ");
         let command = temp[0].substring(1, temp[0].length);
-        if (storage[channel] != null){
-            let temp2 = storage[channel];
-            let giveawaycommand = temp2["command"];
+        if (storage[channel]["command"] != null){
+            let giveawaycommand = storage[channel]["command"];
             switch(command) {
                 case giveawaycommand:
                     registerToGiveaway(channel, username);
                     break;
             }
-        } else {
-            switch(command) {
-                case "mail":
-                    newMail(channel);
-                    break;
-                case "nomercy":
-                case "nm":
-                    noMercy(channel);
-                    break;
-                case "adread":
-                    say(channel, "cone no bang go me wha go ran no sponsor no tech yo de oh core re shi mass");
-                    break;
-                case "roll":
-                    dndRoll(channel, message, username);
-                    break;
-                case "deathcount":
-                case "dc":
-                    say(channel, "Death Count: " + storage[channel]["dead_count"]);
-                    break;
-                case "energy":
-                    say(channel, "༼ つ ◕_◕ ༽つ " + channel.substring(1, channel.length).toUpperCase() + " TAKE MY ENERGY ༼ つ ◕_◕ ༽つ")
-                    break;
-                case "ohno":
-                    say(channel, "OH NO, OH NO, OH NO, OH NO");
-                    break;
-                case "maplesatori":
-                    checkMonday(channel);
-                    break;
-                case "awoo":
-                    say(channel, "https://clips.twitch.tv/PhilanthropicImportantMilkAMPEnergy");
-                    break;
-                case "riphp":
-                    say(channel, "https://clips.twitch.tv/ArtisticViscousClamOptimizePrime");
-                    break;
-                case "awoooo":
-                    say(channel, "!sr https://www.youtube.com/watch?v=eGslweDOihs")
-                default:
-                    break;
-            }
+        }
+        switch(command) {
+            case "mail":
+                newMail(channel);
+                break;
+            case "nomercy":
+            case "nm":
+                noMercy(channel);
+                break;
+            case "adread":
+                say(channel, "cone no bang go me wha go ran no sponsor no tech yo de oh core re shi mass");
+                break;
+            case "roll":
+                dndRoll(channel, message, username);
+                break;
+            case "deathcount":
+            case "dc":
+                say(channel, "Death Count: " + storage[channel]["death_count"]);
+                break;
+            case "energy":
+                say(channel, "༼ つ ◕_◕ ༽つ " + channel.substring(1, channel.length).toUpperCase() + " TAKE MY ENERGY ༼ つ ◕_◕ ༽つ")
+                break;
+            case "ohno":
+                say(channel, "OH NO, OH NO, OH NO, OH NO");
+                break;
+            case "maplesatori":
+                checkMonday(channel);
+                break;
+            case "awoo":
+                say(channel, "https://clips.twitch.tv/PhilanthropicImportantMilkAMPEnergy");
+                break;
+            case "riphp":
+                say(channel, "https://clips.twitch.tv/ArtisticViscousClamOptimizePrime");
+                break;
+            case "awoooo":
+                say(channel, "!sr https://www.youtube.com/watch?v=eGslweDOihs")
+            default:
+                break;
         }
     }
 }
@@ -141,9 +156,13 @@ function setMessages(channel, message){
 
 function updateDeathCount(channel, message){
     let count = message.split(" ")[1];
+    console.log(count)
     if (!isNaN(count)){
-        storage[channel]["dead_count"] = count;
-        say(channel, "Death Count: " + storage[channel]["dead_count"]);
+        storage[channel] = {
+            death_count: count
+        };
+        storage[channel]["death_count"] = count;
+        say(channel, "Death Count: " + storage[channel]["death_count"]);
     }
 }
 
@@ -202,12 +221,7 @@ function addGiveaway(channel, command){
     if (storage[channel]) {
         say(channel, "There is already a giveaway in progress, please clear with !cleargiveaway");
     } else {
-        var temp = {
-            "command": command,
-            "entries": [],
-            "active": true
-        }
-        storage[channel] = temp;
+        storage[channel]["command"] = command;
         say(channel, "Giveaway is now active, Type !" + command + " to enter.")
     }
 }
