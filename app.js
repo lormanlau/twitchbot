@@ -1,60 +1,104 @@
 const tmi = require('tmi.js');
-const oAuth = require('./config.js')
-const Discord = require('discord.io')
+const Discord = require('discord.js');
+const oAuth = require('./config.js');
+const fs = require('fs');
 
-const bot = new Discord.Client({
-   token: oAuth.token,
-   autorun: true
+const textToSpeech = require('@google-cloud/text-to-speech');
+const tts = new textToSpeech.TextToSpeechClient();
+
+const bot = new Discord.Client();
+
+bot.on('ready', () => {
+  console.log(`Logged in as ${bot.user.tag}!`);
 });
 
-bot.on('ready', function (evt) {
-    console.log('Connected');
-    console.log('Logged in as: ');
-    console.log(bot.username + ' - (' + bot.id + ')');
-});
-
-bot.on('message', function (user, userID, channelID, message, evt) {
-    // Our bot needs to know if it will execute a command
-    // It will listen for messages that will start with `!`
-    if (message.substring(0, 1) == '!') {
-        var args = message.substring(1).split(' ');
-        var cmd = args[0];
-       
-        args = args.splice(1);
-        switch(cmd) {
-            case 'ping':
-                bot.sendMessage({
-                    to: channelID,
-                    message: 'Pong!'
-                });
+bot.on('message', (msg) => {
+    var channel = options.channels[0]
+    if (msg.content.substring(0,1) == "-"){
+        var args = msg.content.substring(1, msg.content.length).split(" ");
+        switch(args[0]){
+            case "tts":
+                args.shift()
+                var text = args.join(" ")
+                console.log(msg.member.voiceChannel)
+                requestTTS(msg.member.voiceChannel, text)
                 break;
             case "giveaway":
-            addGiveaway(options.channels[0], args[0]);
+                addGiveaway(channel, args[1]);
                 break;
             case "cleargiveaway":
-                clearGiveaway(options.channels[0]);
+                clearGiveaway(channel);
                 break;
             case "pickwinner":
-                pickWinner(options.channels[0]);
+                pickWinner(channel);
                 break;
             case "message":
-                setMessages(options.channels[0], message.substring(9, message.length));
+                setMessages(channel, msg.content.substring(9, msg.content.length));
                 break;
             case "clearmessage":
-                clearMessage(options.channels[0], message);
+                clearMessage(channel, msg.content);
                 break;
             case "updatedc":
-                updateDeathCount(options.channels[0], message);
+                updateDeathCount(channel, msg.content);
                 break;
             case "delete":
-                say(channel, "/timeout " + array[1] + " 1");
+                say(channel, "/timeout " + args[1] + " 1");
                 break;
             default:
                 break;
-            }
-     }
+        }
+    }
 });
 
+bot.login(oAuth.token);
+
+function requestTTS(voiceChannel, text){
+    if (voiceChannel == null){
+        return;
+    }
+    let request = generateRequest(text)
+    tts.synthesizeSpeech(request, (err, response) => {
+        if (err) {
+            console.error('ERROR:', err);
+            return;
+        }
+        fs.writeFile('output.mp3', response.audioContent, 'binary', err => {
+            if (err) {
+              console.error('ERROR:', err);
+              return;
+            }
+            console.log('Audio content written to file: output.mp3');
+            sayThingsInChannel(voiceChannel);
+        });
+    });
+}
+
+
+function generateRequest(text){
+    return {
+        input: {text: text},
+        voice: {languageCode: 'ja-JP', ssmlGender: 'FEMALE'},
+        audioConfig: {audioEncoding: 'MP3'},
+    };
+}
+
+function sayThingsInChannel(voiceChannel){
+    voiceChannel.join()
+    .then(connection => {
+        const dispatcher = connection.playFile('./output.mp3');
+        dispatcher.on('end', () => {
+            console.log("end");
+            voiceChannel.leave();
+        });
+
+        dispatcher.on('error', e => {
+            console.log(e);
+        });
+    })
+    .catch(error => {
+        console.log(error);
+    })
+}
 
 const options = {
     options: {
@@ -82,10 +126,10 @@ var h = ["MorphinTime", "TwitchUnity", "TwitchUnity", "TwitchUnity", "CoolStoryB
 var g = ["TheIlluminati", "TheIlluminati", "TheIlluminati", "TwitchUnity", "CoolStoryBob", "MorphinTime"]
 
 
-var client = new tmi.client(options);
-client.connect();
+var twitch = new tmi.client(options);
+twitch.connect();
 
-client.on("chat", function (channel, user, message, self) {
+twitch.on("chat", function (channel, user, message, self) {
     if (user.username == channel.substring(1, channel.length)){
         adminCommands(channel, message);
         userCommands(channel, message, user.username);
@@ -97,7 +141,7 @@ client.on("chat", function (channel, user, message, self) {
     }
 });
 
-client.on("join", function(channel, username, self){
+twitch.on("join", function(channel, username, self){
     if (self) {
         storage[channel] = {
             "command": null,
@@ -108,38 +152,40 @@ client.on("join", function(channel, username, self){
     };
 });
 
-client.on("whisper", function(from, userstate, message, self){
+twitch.on("whisper", function(from, userstate, message, self){
 
 })
 
 function say(channel, message) {
-    client.action(channel, message);
+    twitch.action(channel, message);
 };
 
 function adminCommands(channel, message){
-    let array = message.split(" ");
-    switch (array[0]){
-        case "!giveaway":
-            addGiveaway(channel, array[1]);
-            break;
-        case "!cleargiveaway":
-            clearGiveaway(channel);
-            break;
-        case "!pickwinner":
-            pickWinner(channel);
-            break;
-        case "!message":
-            setMessages(channel, message.substring(9, message.length));
-            break;
-        case "!clearmessage":
-            clearMessage(channel, message);
-            break;
-        case "!updatedc":
-            updateDeathCount(channel, message);
-        case "!delete":
-            say(channel, "/timeout " + array[1] + " 1");
-        default:
-            break;
+    if (message.substring(0,1) == "!"){
+        let args = message.substring(1,message.length).split(" ");
+        switch (args[0]){
+            case "giveaway":
+                addGiveaway(channel, args[1]);
+                break;
+            case "cleargiveaway":
+                clearGiveaway(channel);
+                break;
+            case "pickwinner":
+                pickWinner(channel);
+                break;
+            case "message":
+                setMessages(channel, message.substring(9, message.length));
+                break;
+            case "clearmessage":
+                clearMessage(channel, message);
+                break;
+            case "updatedc":
+                updateDeathCount(channel, message);
+            case "delete":
+                say(channel, "/timeout " + args[1] + " 1");
+            default:
+                break;
+        }
     }
 }
 
