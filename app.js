@@ -274,7 +274,7 @@ function clearMessage(channel, message){
     var temp = message.split(" ");
     if (!isNaN(temp[1])) {
         say(channel, autoMessageText[channel][temp[1]] + " has been cleared")
-        clearInterval(autoMessage[channel][temp[1]]);
+        clearInterval(autoMessage[channel][parseInt(temp[1])]);
         autoMessage[channel].splice(parseInt(temp[1]), 1)
         autoMessageText[channel].splice(parseInt(temp[1]), 1)
     } else if (temp[1] == "all"){
