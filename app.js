@@ -253,6 +253,7 @@ function setMessages(channel, message){
         autoMessageText[channel].push(message);
         autoMessage[channel].push(setInterval(function(){ say(channel, message); }, 5000 * 60));
     }
+    console.log(autoMessageText)
 }
 
 function updateDeathCount(channel, message){
@@ -278,13 +279,12 @@ function clearMessage(channel, message){
         autoMessage[channel].splice(parseInt(temp[1]), 1)
         autoMessageText[channel].splice(parseInt(temp[1]), 1)
     } else if (temp[1] == "all"){
-        say(channel, "All messages have been cleared");
-        
         for (var i = 0; i < autoMessage[channel].length; i++){
             clearInterval(autoMessage[channel][i])
-            autoMessage[channel].splice(i,1);
-            autoMessageText[channel].splice(i,1);
         }
+        autoMessage[channel] = []
+        autoMessageText[channel] = []
+        say(channel, "All messages have been cleared");
     } else {
         let reply = "";
         for (var interval in autoMessage[channel]) {
